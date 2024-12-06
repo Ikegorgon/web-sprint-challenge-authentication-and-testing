@@ -47,4 +47,25 @@ describe('server.js', () => {
     res = await request(server).post('/api/auth/register').send({username: "test", password: "12345"});
     expect(res.body.message).toBe("username taken");
   });
+  test('[5] Login with valid credentials', async () => {
+    await request(server).post('/api/auth/register').send({username: "test", password: "12345"});
+    const res = await request(server).post('/api/auth/login').send({username: "test", password: "12345"});
+    console.log(res)
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe("welcome, test");
+    expect(res.body.token).toBeTruthy();
+  });
+  test('[6] Login requires username and password', async () => {
+    let res = await request(server).post('/api/auth/login').send({username: "", password: "12345"});
+    expect(res.body.message).toBe("username and password required");
+    res = await request(server).post('/api/auth/login').send({username: "test", password: ""});
+    expect(res.body.message).toBe("username and password required");
+  });
+  test('[7] Can\'t login with invalid credentials', async () => {
+    await request(server).post('/api/auth/login').send({username: "test", password: "12345"});
+    const res = await request(server).post('/api/auth/login').send({username: "test1", password: "123456"});
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe("invalid credentials");
+    expect(res.body.token).toBeFalsy();
+  });
 });
