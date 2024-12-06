@@ -50,7 +50,6 @@ describe('server.js', () => {
   test('[5] Login with valid credentials', async () => {
     await request(server).post('/api/auth/register').send({username: "test", password: "12345"});
     const res = await request(server).post('/api/auth/login').send({username: "test", password: "12345"});
-    console.log(res)
     expect(res.status).toBe(200);
     expect(res.body.message).toBe("welcome, test");
     expect(res.body.token).toBeTruthy();
@@ -68,4 +67,21 @@ describe('server.js', () => {
     expect(res.body.message).toBe("invalid credentials");
     expect(res.body.token).toBeFalsy();
   });
+  test('[8] Cannot access jokes without token', async () => {
+    const res = await request(server).get('/api/jokes');
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe("token required");
+  })
+  test('[9] Cannot access jokes without valid token', async () => {
+    const res = await request(server).get('/api/jokes').set({authorization: "notrealtoken"});
+    console.log(res.body, res.header)
+    expect(res.status).toBe(401);
+    expect(res.body.message).toBe("token invalid");
+  })
+  test('[10] Recieves jokes with valid authentication', async () => {
+    await request(server).post('/api/auth/register').send({username: "test", password: "12345"});
+    const login = await request(server).post('/api/auth/login').send({username: "test", password: "12345"});
+    const res = await request(server).get('/api/jokes').set({authorization: login.body.token});
+    expect(res.body.length).toBe(3);
+  })
 });
